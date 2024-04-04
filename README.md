@@ -800,6 +800,123 @@ Manacher 算法做得非常快, 而上面的 "4. 寻找两个正序数组的中�
 
 ### <a id="1.10"></a>10. 正则表达式匹配 | 困难
 
+问题设置: 给定一个字符串 `s` 和一个正则表达式模式串 `p`, 两者长度均小于 20. 其中 `p` 仅包含两种模式, `.` (匹配一个任意字符) 和 `*` (匹配任意个特定字符), 并且保证 `*` 前面跟着一个字符. 需要注意的是 `*` 前面跟着的字符有可能是 `.`.
+
+要求: 返回模式串 `p` 是否能够完全匹配 `s`.
+
+思路:
+
+- 第一反应就是使用动态规划.
+- 首先要做的是将模式串的两种长度不同的零件 `<char>` 和 `<char>*` 抽象为统一的零件. 这可以通过自定义一个模式类 `Pattern` 来实现.
+- 之后使用下标 `i` 索引模式串的零件, 使用下标 `j` 表示字符串 `s` 的范围为 `s[0 : j - 1]` 的子串, 使用数组 `dp[i][j]` 进行状态转移. 现在假设 `i` 固定, 对于每个 `j`, 状态转移方程分为两部分:
+  - 如果当前零件是匹配固定字符 (必须匹配 1 个字符), 那么对于 `.` 来说任意非空子串都能转移状态至子串 `s[0 : j - 2]`, 除了空子串, 空子串必定失配 (因为必须要匹配一个字符, 而空子串没有字符); 而对于其他任意字符而言当且仅当最后一个字符 `s[j - 1]` 与当前字符相同时非空字串能够转移状态, 而空子串仍然必定失配.
+  - 如果当前零件是带星号字符 (可能匹配 0 或多个字符), 那么不论子串是空子串还是非空子串都需要尝试匹配, 因为一次可以吞掉 0 个或多个相同字符 (`s[j - 1]`, `s[j - 2]`, ...), 并且每吞掉一个字符都需要进行一次状态转移, 只要这些转移状态后的其中一种子情况能够匹配那么当前子串 `s[0 : j - 1]` 就能够匹配. 也就是说对于带星号零件而言匹配过程是个双循环.
+
+代码:
+
+```cpp
+// 自定义的模式类:
+class Pattern {
+private:
+    int _length;
+    vector<string> parts;
+
+public:
+    size_t length() {
+        return _length;
+    }
+    string get_part_by_index(int index) {
+        if (index < 0 || index >= _length) {
+            throw out_of_range("");
+        }
+        return parts[index];
+    }
+    Pattern(const string &pattern) {
+        _length = 0;
+        int i = 0;
+        int pattern_length = pattern.length();
+
+        // 提取所有零件:
+        while (i < pattern_length) {
+            char c = pattern[i];
+            i++;
+            string part({c});
+            if (i < pattern_length && pattern[i] == '*') {
+                part.push_back('*');
+                i++;
+            }
+            parts.emplace_back(part);
+            _length++;
+        }
+    }
+};
+
+class Solution {
+public:
+    bool isMatch(string s, string p) {
+        auto my_pattern = Pattern(p);
+        int s_length = s.length();
+        int p_length = my_pattern.length();
+        vector<bool> dp(s_length + 1, false);
+        dp[0] = true;
+
+        // 遍历每个零件:
+        for (int i = 0; i < p_length; i++) {
+            // 获取零件:
+            string part = my_pattern.get_part_by_index(i);
+            int part_length = part.length();
+
+            // 固定字符 (必须匹配 1 个字符):
+            if (part_length == 1) {
+                char c = part[0];
+
+                // 匹配任意字符 (单次):
+                if (c == '.') {
+                    // 任意非空子串都能转移状态:
+                    for (int j = s_length; j >= 1; j--) {
+                        dp[j] = dp[j - 1];
+                    }
+
+                    // 空子串失配:
+                    dp[0] = false;
+                }
+
+                // 匹配特定字符 (单次):
+                else {
+                    // 仅 "最后一个字符与当前字符相同" 的非空字串能够转移状态:
+                    for (int j = s_length; j >= 1; j--) {
+                        dp[j] = c == s[j - 1] ? dp[j - 1] : false;
+                    }
+
+                    // 空子串必定失配:
+                    dp[0] = false;
+                }
+            }
+
+            // 带星号字符 (可能匹配 0 或多个字符):
+            else {
+                char c = part[0];
+
+                // 注意此处同样能够匹配空字串:
+                for (int j = s_length; j >= 0; j--) {
+                    // 匹配 0 个字符:
+                    if (dp[j]) {
+                        continue;
+                    }
+
+                    // 尝试匹配多个字符:
+                    bool dp_j = false;
+                    for (int k = j - 1; k >= 0 && (c == '.' || c == s[k]) && !(dp_j = dp[k]); k--) {
+                    }
+                    dp[j] = dp_j;
+                }
+            }
+        }
+        return dp[s_length];
+    }
+};
+```
+
 ### <a id="1.11"></a>11. 盛最多水的容器 | 中等
 
 ### <a id="1.12"></a>12. 整数转罗马数字 | 中等

@@ -19,6 +19,8 @@
 - <a href="#1.11">69. x 的平方根 | 简单</a>
 
 </details>
+<details><summary><a href="#2">124. 二叉树中的最大路径和 | 困难</a></summary>
+</details>
 
 <div align="right"><b><a href="#toc">返回顶部↑</a></b></div>
 
@@ -792,6 +794,98 @@ public:
             }
         }
         return -1;
+    }
+};
+```
+
+<div align="right"><b><a href="#toc">返回顶部↑</a></b></div>
+
+## <a id="2"></a>124. 二叉树中的最大路径和 | 困难
+
+问题设置: 给定一棵二叉树, 树的结点的值的类型为整型 `int`, 结点数量的量级为 1e4, 结点的值的范围可正可负, 而绝对值的量级不超过 1e3. 树中的**路径**定义为一个结点序列, 序列中前后相邻的两个结点之间均存在边. 注意这个结点序列可以是任意顺序的, 例如可以从左子结点开始, 经过根结点, 再到右子结点构成一个序列, 也可以返过来. 相当于把树看成是一个无向无环图. **路径和**定义为路径中所有结点的值之和.
+
+要求: 返回树中存在的最大路径和.
+
+思路:
+
+- 第一反应是将问题分解为左子树和右子树的两个子问题, 然后在根结点处合并.
+- 由于路径可以位于任意位置, 因此首先考虑对路径位置进行降维:
+
+  - 假设路径经过根结点, 那么最大路径和取决于 "**左子树中**以左子树根结点为端点的最大路径和" 和 "**右子树中**以右子树根结点为端点的最大路径和". 只要哪个大于 0 就加上哪个, 多多益善; 小于等于 0 的路径和起到反作用, 因此不考虑.
+  - 假设路径不经过根结点, 那么路径就被根结点阻挡在左子树或者右子树中, 因此最大路径和等于 "**左子树中**的最大路径和" 和 "**右子树中**的最大路径和" 之间的较大者.
+  
+  可以看到降维之后的子问题需要维护两个返回值, 一个是 "以根结点为端点的最大路径和", 另一个是 (无任何限制的) "最大路径和". "最大路径和" 的维护方法如上所示, 而 "以根结点为端点的最大路径和" 就等于根结点的值加上左右子树中以根结点为端点的最大路径和的较大者.
+- 上面考虑的是左右子树均为非空的情况. 如果左右子树均为空, 那么不论是最大路径和还是以根结点为端点的最大路径和均等于根结点的值; 如果左右子树中某一个为空而另一个为非空, 同样可以根据上述思路进行分情况讨论.
+- 这道题目此前已经做过. 但是现在并不是依靠当时的做题经验 (事实上我在做完之后返回去看当时自己的做法时是有新鲜感的), 而是依靠的自己做过的树的题目所积攒起来的手感.
+
+代码:
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int maxPathSum(TreeNode *root) {
+        int mps_all;
+        int mps_root;
+        _maxPathSum(root, mps_all, mps_root);
+
+        return mps_all;
+    }
+
+    // 帮手函数
+    void _maxPathSum(TreeNode *root, int &mps_all, int &mps_root) {
+        // 左右子树均为空:
+        if (!root->left && !root->right) {
+            // 不论是最大路径和还是以根结点为端点的最大路径和均等于根结点的值:
+            mps_all = mps_root = root->val;
+
+            return;
+        }
+
+        // 左右子树中某一个为空而另一个为非空:
+        if (!root->left || !root->right) {
+            // 选定非空子树:
+            TreeNode *sub_tree = root->left ? root->left : root->right;
+
+            // 求解子问题:
+            int mps_all_sub_tree;
+            int mps_root_sub_tree;
+            _maxPathSum(sub_tree, mps_all_sub_tree, mps_root_sub_tree);
+
+            // 构造结果:
+            mps_root = root->val + max(0, mps_root_sub_tree);
+            mps_all = max(mps_all_sub_tree, mps_root);
+
+            return;
+        }
+
+        // 左右子树均为非空.
+
+        // 求解左子树的子问题:
+        int mps_all_left;
+        int mps_root_left;
+        _maxPathSum(root->left, mps_all_left, mps_root_left);
+
+        // 求解右子树的子问题:
+        int mps_all_right;
+        int mps_root_right;
+        _maxPathSum(root->right, mps_all_right, mps_root_right);
+
+        // 构造结果:
+        mps_all = max(max(mps_all_left, mps_all_right), root->val + max(0, mps_root_left) + max(0, mps_root_right));
+        mps_root = root->val + max(0, max(mps_root_left, mps_root_right));
+
+        return;
     }
 };
 ```

@@ -18,6 +18,8 @@
 - <a href="#1.10">80. 删除有序数组中的重复项 II | 中等</a>
 - <a href="#1.11">69. x 的平方根 | 简单</a>
 - <a href="#1.12">124. 二叉树中的最大路径和 | 困难</a>
+- <a href="#1.13">102. 二叉树的层序遍历 | 中等</a>
+- <a href="#1.14">199. 二叉树的右视图 | 中等</a>
 
 </details>
 
@@ -812,8 +814,9 @@ public:
 
   - 假设路径经过根结点, 那么最大路径和取决于 "**左子树中**以左子树根结点为端点的最大路径和" 和 "**右子树中**以右子树根结点为端点的最大路径和". 只要哪个大于 0 就加上哪个, 多多益善; 小于等于 0 的路径和起到反作用, 因此不考虑.
   - 假设路径不经过根结点, 那么路径就被根结点阻挡在左子树或者右子树中, 因此最大路径和等于 "**左子树中**的最大路径和" 和 "**右子树中**的最大路径和" 之间的较大者.
-  
+
   可以看到降维之后的子问题需要维护两个返回值, 一个是 "以根结点为端点的最大路径和", 另一个是 (无任何限制的) "最大路径和". "最大路径和" 的维护方法如上所示, 而 "以根结点为端点的最大路径和" 就等于根结点的值加上左右子树中以根结点为端点的最大路径和的较大者.
+
 - 上面考虑的是左右子树均为非空的情况. 如果左右子树均为空, 那么不论是最大路径和还是以根结点为端点的最大路径和均等于根结点的值; 如果左右子树中某一个为空而另一个为非空, 同样可以根据上述思路进行分情况讨论.
 - 这道题目此前已经做过. 但是现在并不是依靠当时的做题经验 (事实上我在做完之后返回去看当时自己的做法时是有新鲜感的), 而是依靠的自己做过的树的题目所积攒起来的手感.
 
@@ -885,6 +888,143 @@ public:
         mps_root = root->val + max(0, max(mps_root_left, mps_root_right));
 
         return;
+    }
+};
+```
+
+<div align="right"><b><a href="#toc">返回顶部↑</a></b></div>
+
+### <a id="1.13"></a>102. 二叉树的层序遍历 | 中等
+
+问题设置: 给定一棵二叉树 `root`, 其结点数目的量级为 1e3, 结点的值为整数, 可正可负, 取值范围的绝对值的量级为 1e3.
+
+要求: 按层序遍历顺序返回所有结点的值, 其中每一层结点的值构成一个数组, 最终的返回值为一个由所有层的结点值数组构成的数组. 例如传入一棵三层的树 `[3,9,20,null,null,15,7]` 所返回的值应为 `[[3],[9,20],[15,7]]`.
+
+思路:
+
+- 主要思路是维护一个循环不变量: "前一层的所有非空树结点指针队列", 记为 A.
+- 每次进入循环时对 A 进行遍历, 在收集前一层的所有结点的值至一个数组中的同时收集当前层的所有非空树结点于另一个队列 B. 在循环的最后一步将 B 赋值给 A 维护循环不变量.
+- 初始时 A 等于 `root`; 循环退出当且仅当 B 为空.
+
+代码:
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<vector<int>> levelOrder(TreeNode *root) {
+        if (!root) {
+            return {};
+        }
+
+        queue<TreeNode *> last_layer_tree_node_pointers;  // 前一层的所有非空树结点指针队列 A
+        queue<TreeNode *> current_layer_tree_node_pointers;  // 当前层的所有非空树结点指针队列 B
+        last_layer_tree_node_pointers.push(root);  // 初始时 A 等于 `root`
+        vector<vector<int>> result;
+        while (1) {
+            vector<int> last_layer_tree_node_pointer_values;
+
+            // 对 A 进行遍历:
+            while (!last_layer_tree_node_pointers.empty()) {
+                auto node = last_layer_tree_node_pointers.front();
+                last_layer_tree_node_pointers.pop();
+
+                // 收集前一层的所有结点的值:
+                last_layer_tree_node_pointer_values.push_back(node->val);
+
+                // 收集当前层的所有非空树结点:
+                if (node->left) {
+                    current_layer_tree_node_pointers.push(node->left);
+                }
+                if (node->right) {
+                    current_layer_tree_node_pointers.push(node->right);
+                }
+            }
+
+            result.emplace_back(std::move(last_layer_tree_node_pointer_values));
+
+            // 循环退出当且仅当 B 为空:
+            if (current_layer_tree_node_pointers.empty()) {
+                break;
+            }
+
+            // 否则将 B 赋值给 A, 维护循环不变量:
+            swap(last_layer_tree_node_pointers, current_layer_tree_node_pointers);
+        }
+
+        return result;
+    }
+};
+```
+
+<div align="right"><b><a href="#toc">返回顶部↑</a></b></div>
+
+### <a id="1.14"></a>199. 二叉树的右视图 | 中等
+
+问题设置: 给定一棵二叉树 `root`, 其结点数目的量级为 1e2, 结点的值为整数, 可正可负, 取值范围的绝对值的量级为 1e2.
+
+要求: 以数组的形式, 按从上到下的顺序, 返回树中每一层从右往左数第一个结点的值.
+
+思路:
+
+- 依照直觉, 似乎按从右往左的顺序进行前序遍历能够按照所要求的顺序遍历树中每一层从右往左数第一个结点. 理论上也确实如此, 对于按从右往左的顺序进行前序遍历, 有如下定理成立:
+  - **定理**: 对于按从右往左的顺序进行前序遍历, 其在每一层中首次遍历到的结点必定是该层中最右端的结点.
+    **证明**: 假设对于按从右往左的顺序进行前序遍历, 其在某一层中首次遍历到的结点不是该层中最右端的结点. 由于该层中最右端的结点位于该层中首次遍历到的结点的右方, 因此必然能够找到二者的最近公共祖先, 使得该层中首次遍历到的结点位于二者的最近公共祖先的左子树中, 而该层中最右端的结点位于二者的最近公共祖先的右子树中. 按照从右往左的顺序进行前序遍历的性质, 一棵树的左子树中存在已被遍历的结点当且仅当该树的右子树中的所有结点均已被遍历, 然而该层中首次遍历到的结点却先于该层中最右端的结点被遍历, 这便产生了矛盾.
+    因此只需按照从右往左的顺序进行前序遍历并在首次进入某一层时收集当前结点即可. 由于前序遍历总是从上到下的, 因此收集到的所有的最右端结点的序列天然是按照高度排序好的.
+
+代码:
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<int> rightSideView(TreeNode *root) {
+        if (!root) {
+            return {};
+        }
+        vector<int> result;
+        int best_level = 0;
+        _rightSideView_helper(root, 1, best_level, result);
+        return result;
+    }
+
+    // 按从右往左的顺序进行前序遍历:
+    void _rightSideView_helper(TreeNode *root, int level, int &best_level, vector<int> &result) {
+        // 在首次进入某一层时收集当前结点:
+        if (level > best_level) {
+            best_level++;
+            result.push_back(root->val);
+        }
+
+        // 遍历右子树:
+        if (root->right) {
+            _rightSideView_helper(root->right, level + 1, best_level, result);
+        }
+
+        // 遍历左子树:
+        if (root->left) {
+            _rightSideView_helper(root->left, level + 1, best_level, result);
+        }
     }
 };
 ```

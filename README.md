@@ -1,7 +1,7 @@
 # LeetCode
 
 > [!IMPORTANT]
-> 本仓库暂停更新, 新题解请前往[博客](https://xubinh.github.io/).
+> 本仓库暂停更新, 新题解请前往[博客](https://xubinh.github.io/tags/leetcode/).
 
 刷题记录 (从上到下按刷题时间顺序从早到晚排序)
 
